@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Task Tracker</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<h1>Task Tracker</h1>
+
+<form id="create-task-form">
+    <input id="description" type="text" placeholder="Описание задачи">
+    <button type="submit">Создать</button>
+</form>
+
+<select id="status-filter">
+    <option value="">Все</option>
+    <option value="todo">Todo</option>
+    <option value="in-progress">In Progress</option>
+    <option value="done">Done</option>
+</select>
+
+<div id="tasks"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

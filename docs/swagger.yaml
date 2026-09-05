@@ -1,0 +1,233 @@
+basePath: /
+definitions:
+  http.CreateTaskRequest:
+    properties:
+      description:
+        example: Learn REST
+        type: string
+    type: object
+  http.CreateTaskResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+    type: object
+  http.UpdateTaskRequest:
+    properties:
+      description:
+        example: Learn REST and Swagger
+        type: string
+    type: object
+  task.Status:
+    enum:
+    - todo
+    - in-progress
+    - done
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - StatusTodo
+    - StatusInProgress
+    - StatusDone
+    - StatusCanceled
+  task.Task:
+    properties:
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        format: int64
+        type: integer
+      status:
+        $ref: '#/definitions/task.Status'
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for Task Tracker
+  title: Task Tracker API
+  version: "1.0"
+paths:
+  /api/tasks:
+    get:
+      description: Returns all tasks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/task.Task'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get all tasks
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Creates a new task
+      parameters:
+      - description: Task data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.CreateTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a task
+      tags:
+      - tasks
+  /api/tasks/{id}:
+    delete:
+      description: Deletes a task by its ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Delete a task
+      tags:
+      - tasks
+    get:
+      description: Returns a task by its ID
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/task.Task'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get task by ID
+      tags:
+      - tasks
+    put:
+      consumes:
+      - application/json
+      description: Updates a task description
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Task data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.UpdateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a task
+      tags:
+      - tasks
+  /api/tasks/{id}/done:
+    post:
+      description: Marks a task as completed
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Mark task as done
+      tags:
+      - tasks
+  /api/tasks/{id}/in-progress:
+    post:
+      description: Marks a task as in progress
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Mark task as in progress
+      tags:
+      - tasks
+swagger: "2.0"

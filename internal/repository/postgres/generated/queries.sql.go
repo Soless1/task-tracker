@@ -28,7 +28,8 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (int64, 
 }
 
 const deleteTask = `-- name: DeleteTask :exec
-DELETE FROM task_tracker.tasks
+DELETE
+FROM task_tracker.tasks
 WHERE id = $1
 `
 
@@ -91,8 +92,8 @@ func (q *Queries) GetTasks(ctx context.Context) ([]TaskTrackerTask, error) {
 const updateTask = `-- name: UpdateTask :exec
 UPDATE task_tracker.tasks
 SET description = $2,
-    status = $3,
-    updated_at = NOW()
+    status      = $3,
+    updated_at  = NOW()
 WHERE id = $1
 `
 
@@ -104,21 +105,5 @@ type UpdateTaskParams struct {
 
 func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) error {
 	_, err := q.db.Exec(ctx, updateTask, arg.ID, arg.Description, arg.Status)
-	return err
-}
-
-const qwe = `-- name: qwe :exec
-INSERT INTO task_tracker.tasks (description, status)
-VALUES ($1, $2)
-RETURNING id
-`
-
-type qweParams struct {
-	Description string
-	Status      TaskTrackerTaskStatus
-}
-
-func (q *Queries) qwe(ctx context.Context, arg qweParams) error {
-	_, err := q.db.Exec(ctx, qwe, arg.Description, arg.Status)
 	return err
 }

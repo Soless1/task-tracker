@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
-	"os"
+
+	"task-tracker/internal/repository/json"
 	"task-tracker/internal/repository/postgres"
+	"task-tracker/internal/usecase/task"
 	"task-tracker/migrations"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,17 +18,6 @@ import (
 	httptransport "task-tracker/internal/transport/http"
 )
 
-//func main() {
-//	var repo task.TaskRepository
-//	repo, err := json.NewJSONTaskRepository()
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	cli := NewCLI(repo)
-//	cli.Run(os.Args[1:])
-//}
-
 // @title Task Tracker API
 // @version 1.0
 // @description REST API for Task Tracker
@@ -34,21 +26,92 @@ import (
 func main() {
 	ctx := context.Background()
 
-	pool, err := pgxpool.New(ctx, "postgres://postgres:postgres@localhost:5432/task_tracker?sslmode=disable")
+	mode := flag.String(
+		"mode",
+		"web",
+		"application mode: cli or web",
+	)
+
+	storage := flag.String(
+		"storage",
+		"postgres",
+		"storage: json or postgres",
+	)
+
+	flag.Parse()
+
+	repo, cleanup, err := createRepository(ctx, *storage)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("failed to create repository:", err)
 		return
 	}
-	defer pool.Close()
+	defer cleanup()
 
-	err = migrations.Run(pool)
-	if err != nil {
-		fmt.Println(err)
-		return
+	switch *mode {
+	case "cli":
+		runCLI(ctx, repo, flag.Args())
+
+	case "web":
+		runWebServer(repo)
+
+	default:
+		fmt.Printf("unknown mode: %q\n", *mode)
+		fmt.Println("available modes: cli, web")
 	}
+}
 
-	repo := postgres.NewRepository(pool)
+func createRepository(
+	ctx context.Context,
+	storage string,
+) (task.TaskRepository, func(), error) {
 
+	switch storage {
+	case "json":
+		repo, err := json.NewJSONTaskRepository()
+		if err != nil {
+			return nil, func() {}, err
+		}
+
+		return repo, func() {}, nil
+
+	case "postgres":
+		pool, err := pgxpool.New(
+			ctx,
+			"postgres://postgres:postgres@localhost:5432/task_tracker?sslmode=disable",
+		)
+		if err != nil {
+			return nil, func() {}, err
+		}
+
+		if err := migrations.Run(pool); err != nil {
+			pool.Close()
+			return nil, func() {}, err
+		}
+
+		repo := postgres.NewRepository(pool)
+
+		return repo, func() {
+			pool.Close()
+		}, nil
+
+	default:
+		return nil, func() {}, fmt.Errorf(
+			"unknown storage: %q (available: json, postgres)",
+			storage,
+		)
+	}
+}
+
+func runCLI(
+	ctx context.Context,
+	repo task.TaskRepository,
+	args []string,
+) {
+	cli := NewCLI(repo)
+	cli.Run(ctx, args)
+}
+
+func runWebServer(repo task.TaskRepository) {
 	h := httptransport.NewHandler(repo)
 
 	mux := http.NewServeMux()
@@ -65,13 +128,13 @@ func main() {
 
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 
-	fmt.Println("server started on :8080")
+	const addr = ":8080"
 
-	err = http.ListenAndServe(":8080", mux)
-	if err != nil {
-		fmt.Println(err)
+	fmt.Println("server started on", addr)
+	fmt.Println("web:     http://localhost:8080")
+	fmt.Println("swagger: http://localhost:8080/swagger/index.html")
+
+	if err := http.ListenAndServe(addr, mux); err != nil {
+		fmt.Println("server stopped:", err)
 	}
-
-	cli := NewCLI(repo)
-	cli.Run(ctx, os.Args[1:])
 }

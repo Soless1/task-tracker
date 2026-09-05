@@ -36,4 +36,5 @@ func CreateTask(description string, createdAt time.Time, ID int64) Task {
 
 func (t *Task) ChangeDescription(description string) {
 	t.Description = description
+	t.UpdatedAt = time.Now()
 }

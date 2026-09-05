@@ -1,0 +1,45 @@
+  version: '3'
+
+  tasks:
+    generate:
+      desc: Generate all project code and documentation
+      cmds:
+        - task: generate:sqlc
+        - task: generate:swagger
+
+    generate:sqlc:
+      desc: Generate PostgreSQL code with sqlc
+      cmds:
+        - sqlc generate
+
+    generate:swagger:
+      desc: Generate Swagger documentation
+      cmds:
+        - swag init -g cmd/task-cli/main.go
+
+    test:
+      desc: Run all tests
+      cmds:
+        - go test ./...
+
+    run:
+      desc: Run the application
+      cmds:
+        - go run ./cmd/task-cli
+
+    postgres:
+      desc: Start PostgreSQL
+      cmds:
+        - docker compose up -d postgres
+
+    postgres:down:
+      desc: Stop PostgreSQL
+      cmds:
+        - docker compose down
+
+    setup:
+      desc: Setup project
+      cmds:
+        - task: postgres
+        - task: generate
+        - task: run
